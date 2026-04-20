@@ -1,0 +1,67 @@
+{
+  "phase": "followup",
+  "repo": "deepseek-ai/awesome-deepseek-integration",
+  "candidate": "Add Aider to Applications",
+  "identity": "yurekami",
+  "scout_verdict": "viable; CC0-1.0, no CLA, 5 distinct external authors merged in last 90d",
+  "dedupe": {
+    "open_competing": [],
+    "closed_relevant": [
+      {
+        "url": "https://github.com/deepseek-ai/awesome-deepseek-integration/issues/27",
+        "title": "添加 Aider 编程助手",
+        "stateReason": "COMPLETED",
+        "verdict": "explicit maintainer invitation to PR; original requester never followed up"
+      }
+    ]
+  },
+  "archaeology": "no load-bearing reason for omission; maintainer mowentian asked for the PR in #27",
+  "reveal_summary": {
+    "median_loc": 25,
+    "median_files": 5,
+    "distinct_authors_last_10": 10,
+    "title_pattern": "Add X to Applications | feat: add X to Applications | Add X"
+  },
+  "fewshot_cold_start": false,
+  "repro": {
+    "verdict": "reproduces",
+    "evidence": [
+      "Aider-AI/aider: stars=43606, archived=false, license=Apache-2.0, pushed_at=2026-04-09",
+      "https://aider.chat/docs/llms/deepseek.html → HTTP 200",
+      "source file aider/website/docs/llms/deepseek.md exists in repo"
+    ]
+  },
+  "security_flag": false,
+  "draft_diff_stat": "+5 -0, 1 file (README.md)",
+  "throttle": {
+    "7d_total": 0,
+    "14d_this_repo": 0,
+    "budget_ok": true
+  },
+  "decisions": [
+    {
+      "gate": "scout",
+      "choice": "proceed",
+      "rationale": "real community repo, low maintainer concentration, CC0"
+    },
+    {
+      "gate": "section_choice",
+      "choice": "Applications",
+      "rationale": "Native AI Code Editor is GUI editors only; Aider is CLI; Applications is the catch-all where similar tools live"
+    },
+    {
+      "gate": "form",
+      "choice": "simple",
+      "rationale": "single-row table entry matches median LOC; no need for docs/aider/ subdir"
+    },
+    {
+      "gate": "title",
+      "choice": "Add Aider to Applications",
+      "rationale": "matches 4 of 10 recent merges' shape; lowercase 'feat:' prefix optional, omitted to match plain 'Add X' majority"
+    }
+  ],
+  "next_action": "wait for user attestation (y/N) before push + pr create",
+  "pr_url": "https://github.com/deepseek-ai/awesome-deepseek-integration/pull/582",
+  "opened_at": "2026-04-20T10:52:23Z",
+  "next_check_at": "2026-04-21T10:52:23Z"
+}

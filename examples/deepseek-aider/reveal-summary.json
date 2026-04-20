@@ -1,0 +1,35 @@
+{
+  "median_loc": 25,
+  "median_files": 5,
+  "distinct_authors": 10,
+  "title_prefixes": [
+    {
+      "p": "feat",
+      "n": 4
+    },
+    {
+      "p": "Add OAI Compatible Provider for Copilot, Dish AI Commit, and OpenMCP",
+      "n": 1
+    },
+    {
+      "p": "Add Opik to DeepSeek observability integrations",
+      "n": 1
+    },
+    {
+      "p": "Add Turtle Noir to Applications list",
+      "n": 1
+    },
+    {
+      "p": "Add subtitle-translator to Applications",
+      "n": 1
+    },
+    {
+      "p": "Update AstrBot links",
+      "n": 1
+    },
+    {
+      "p": "Update website and image url",
+      "n": 1
+    }
+  ]
+}
