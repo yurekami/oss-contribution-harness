@@ -11,9 +11,9 @@ argument-hint: "<owner/repo> [--scout | --candidate <issue-url> | --resume <id> 
 ---
 
 <Purpose>
-A contribution harness for open-source GitHub repositories that enforces the ten rules below as hard phase gates, with per-candidate state persisted under `$HOME/.omc/ghcontrib/`. Judgment gates are explicit — the agent decides per-repo rather than running hardcoded branches.
+A contribution harness for open-source GitHub repositories that enforces the rules below as hard phase gates, with per-candidate state persisted under `$HOME/.omc/ghcontrib/`. Judgment gates are explicit — the agent decides per-repo rather than running hardcoded branches.
 
-The ten rules:
+The rules:
 1. Reproduction is the merge gate. No repro → candidate dies.
 2. Imitate merge history, not CONTRIBUTING.md. Revealed norm > stated norm.
 3. Respect load-bearing behavior. Some "bugs" are intentional.
@@ -24,7 +24,33 @@ The ten rules:
 8. Plan the follow-up (CI, reviewer comments, bot signals).
 9. Throttle on calendar time. Velocity is a semantic signal.
 10. Branch at decision points (Ouroboros). Judgment > pre-declared rules.
+11. Demonstrate system understanding. Plausible code is not a credibility signal.
+12. Make design decisions reviewable, not just the diff.
 </Purpose>
+
+<Credibility_Principle>
+> "Talk and code is cheap. Show me you really care."
+> — Roger Wang, MLSys 2026 ("Rethinking Open Source Contribution in the Age of AI Agents")
+
+AI coding agents changed the contributor pipeline. Weekly PR volume to major AI infrastructure repos (vLLM, etc.) spiked visibly around agent releases in 2025–2026. More people can generate plausible code and open pull requests quickly. That shifts what maintainers look for.
+
+The hard part of review is no longer "does the code work." It is:
+- Does the contributor understand the system they are changing?
+- Does the change solve the right problem at the right scale?
+- Will the contributor stay involved after the PR is opened?
+
+If the new on-ramp to open source is "prompt an agent," maintainers will see more contributors who have not deeply read the codebase. The harness must produce contributions that carry **credibility signals beyond the diff**:
+
+| Signal | Where the harness enforces it |
+|--------|-------------------------------|
+| **System understanding** | Phase 2 — `understanding.md` must show the contributor read the relevant subsystem, not just the target lines |
+| **Right problem, right scale** | Phase 0 — scout evaluates problem-fit, not just repo-fit; Phase 3 — reveal constrains scope to median |
+| **Clear communication** | Phase 7 — design context section makes decisions reviewable, not just the code |
+| **Ownership beyond the PR** | Phase 11 — follow-up is not optional; orphaned PRs are closed, not left rotting |
+| **Contributor voice** | Phase 4 — few-shot calibration; cold-start contributors default to terser, more observation-driven drafts |
+
+The bar for contribution is higher and clearer now. This harness exists to clear that bar, not to lower it.
+</Credibility_Principle>
 
 <Use_When>
 - User wants to contribute code/docs to an upstream GitHub repository
@@ -82,6 +108,7 @@ $HOME/.omc/ghcontrib/
 │       ├── dedupe.json         matches from open+closed issues/PRs
 │       ├── reveal.md           last-10-merged-PRs style fingerprint
 │       ├── archaeology.md      blame, linked issues, design discussion
+│       ├── understanding.md    subsystem comprehension proof (rule 11)
 │       ├── fewshot.md          user's merged PRs as style corpus
 │       ├── repro/              clone + repro script + logs
 │       ├── draft.md            draft PR body (never pushed without confirm)
@@ -113,6 +140,12 @@ gh pr list --repo "$OWNER/$REPO" --state merged --limit 50 --json author,mergedA
 - Integration examples / adapters
 - Obvious typos or broken links
 - Reproducible numerical/correctness bugs (rare, high-value)
+
+**Right problem, right scale.** Even in contribution-friendly repos, evaluate whether the candidate issue is the right *kind* of problem for an external contributor. Maintainers value contributors who pick problems that match their depth of system understanding. Signals that a problem is right-sized:
+- The issue is self-contained — doesn't require touching 5 subsystems the contributor hasn't read
+- The scope matches the reveal norm (Phase 3 will enforce this numerically)
+- The issue is not "design the architecture" work that requires deep context only maintainers have
+- For first-contact contributions: prefer concrete bugs, missing tests, documentation gaps, or clearly-scoped enhancements over refactors or new features
 
 Record the scout decision in `candidates/<id>/state.json` as `scout_verdict`. If the verdict is "research-release with no viable surface," stop here. Do not proceed to dedupe.
 
@@ -150,6 +183,16 @@ gh api "repos/$OWNER/$REPO/discussions?per_page=30" --paginate 2>/dev/null | jq 
 ```
 
 Write `archaeology.md` with: original-author, original-commit-rationale, any linked design doc, any prior attempts at the same change and why they closed. If any of those say "this is intentional," **stop** and convert the candidate to a question issue (not a PR) or kill it.
+
+**System understanding artifact (rule 11).** Also write `understanding.md` — a brief document (5–15 lines) showing the contributor has read and understood the relevant subsystem, not just the target lines. This is the credibility signal that separates "I prompted an agent to change line 194" from "I understand how `formatLinterResults` composes output from the `NamedLinter` pipeline and why the disable hint belongs in the per-linter header, not per-warning."
+
+Contents of `understanding.md`:
+- What subsystem this change touches and how it fits into the larger architecture
+- What other code paths depend on or are affected by this change
+- Why the chosen approach is correct given the system's design, not just that it compiles
+- Any constraints or invariants the contributor discovered by reading the code
+
+This artifact is not included in the PR body (maintainers don't want to read your homework). It exists to force the contributor — or the agent acting on their behalf — to actually read the codebase before generating a diff. If `understanding.md` cannot be written convincingly, the contributor does not understand the system well enough to change it.
 
 ## Phase 3 — Reveal (rule 2, merge history over CONTRIBUTING.md)
 
@@ -261,6 +304,13 @@ cat > "$CAND/draft.md" <<EOF
 ## Why
 <link to existing issue if one was found in dedupe.json; cite archaeology.md if relevant>
 
+## Design context
+<make the design decision reviewable, not just the code (rule 12):
+ - what alternatives were considered and why this approach was chosen
+ - what the change does NOT do and why (non-goals prevent scope creep reviews)
+ - any constraints discovered during archaeology that shaped the approach
+ Keep this to 2-4 sentences. Skip for trivial changes (typos, version bumps).>
+
 ## Reproduction
 <verbatim from repro.log, trimmed>
 
@@ -273,6 +323,8 @@ EOF
 ```
 
 Write the patch. Keep diff size at or under the `reveal.md` median. Commit structure matches revealed norm (usually squash-friendly single commit with imperative subject).
+
+**Design reviewability (rule 12).** Maintainers spend review time understanding *why* a change was made this way, not just *what* changed. The "Design context" section exists so the reviewer can evaluate the decision, not just the diff. This is especially important when AI agents draft the code — the maintainer needs to see that judgment was applied, not just code generation.
 
 ## Phase 8 — Throttle (rule 9, calendar-time budget)
 
@@ -363,6 +415,14 @@ For each PR, the harness computes the **next action** and records it in `followu
 
 Never orphan. If a candidate sits in `followup` for >60 days with no resolution, escalate to the user.
 
+**Ownership beyond the PR.** A PR is not a fire-and-forget artifact. The contributor signals credibility by:
+- Responding to reviewer feedback within 48h, not letting comments age
+- Pushing fix commits that address the *spirit* of the review, not just the letter
+- Closing the PR themselves if it becomes clear the approach is wrong, rather than waiting for the maintainer to do it
+- Thanking reviewers for their time — reviewer bandwidth is the scarcest resource in OSS
+
+If the harness is used by an AI agent, the agent must schedule follow-up checks and surface reviewer comments to the human. The human decides the response. An AI-generated "thanks for the feedback, I'll fix it" that is never followed up is worse than silence.
+
 ## Phase 12 — Close out
 
 On merge/close, append a final event to the ledger and write a short post-mortem into `candidates/<id>/postmortem.md`. Record what the revealed-norm fingerprint got right and wrong — feed back into future drafts.
@@ -373,15 +433,19 @@ On merge/close, append a final event to the ledger and write a short post-mortem
 These are the decision points where the agent *should* branch on per-repo context, not hardcoded rules (rule 10):
 
 1. **Scout verdict** — is this repo structurally contribution-friendly?
-2. **Archaeology flags "intentional"** — downgrade to issue or kill?
-3. **Dedupe partial match** — comment on existing thread, narrow, or kill?
-4. **Repro flaky** — open issue first, do not draft fix
-5. **Security classification** — redirect or proceed?
-6. **Reveal shows tiny PRs, candidate is large** — split, narrow, or kill?
-7. **Fewshot cold-start** — terser, more observation-driven draft
-8. **Throttle near budget** — defer with an explicit date
-9. **PR silent ≥14d** — bump once, then at 30d close; do not spam
-10. **CI fails after push** — fix or close; do not leave a red PR sitting
+2. **Problem-fit** — is this the right problem at the right scale for this contributor's depth? (rule 11)
+3. **Archaeology flags "intentional"** — downgrade to issue or kill?
+4. **Understanding quality** — can the contributor articulate how the subsystem works, not just what to change? (rule 11)
+5. **Dedupe partial match** — comment on existing thread, narrow, or kill?
+6. **Repro flaky** — open issue first, do not draft fix
+7. **Security classification** — redirect or proceed?
+8. **Reveal shows tiny PRs, candidate is large** — split, narrow, or kill?
+9. **Design reviewability** — does the draft explain the decision, not just the diff? (rule 12)
+10. **Fewshot cold-start** — terser, more observation-driven draft
+11. **Throttle near budget** — defer with an explicit date
+12. **PR silent ≥14d** — bump once, then at 30d close; do not spam
+13. **CI fails after push** — fix or close; do not leave a red PR sitting
+14. **Reviewer responsiveness** — respond within 48h or escalate to user; never let feedback age
 
 At each gate, record the decision and one-line rationale in `state.json` under `decisions: [{gate, choice, rationale, ts}]`. These become the dataset for tuning the harness.
 </Judgment_Gates>

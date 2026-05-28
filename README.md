@@ -1,10 +1,23 @@
 # oss-contribution-harness
 
 A regression-safe pipeline for getting AI-drafted pull requests merged upstream
-instead of filed as noise. Implemented as a [Claude Code](https://claude.com/claude-code)
+instead of filed as noise. Implements the credibility signals that maintainers
+look for now that AI agents have changed the contributor pipeline.
+
+> "Talk and code is cheap. Show me you really care."
+> — Roger Wang, MLSys 2026
+
+Implemented as a [Claude Code](https://claude.com/claude-code)
 skill, but the workflow is tool-agnostic — the gates are the point.
 
 ## Why this exists
+
+AI coding agents changed open source contribution. Weekly PR volume to major
+AI infrastructure repos spiked visibly around agent releases in 2025–2026.
+Generating plausible code is no longer the bottleneck — the bottleneck is
+reviewer trust. Maintainers now need to evaluate whether the contributor
+understands the system, whether the change solves the right problem, and
+whether the person will stay involved after the PR is opened.
 
 LLM-driven contribution at scale fails for predictable reasons:
 
@@ -23,7 +36,7 @@ This harness encodes ten rules as **hard phase gates** with explicit judgment
 points, not pre-declared logic. Each rule corresponds to a phase in the pipeline
 and writes its evidence to per-candidate state under `~/.omc/ghcontrib/`.
 
-## The 10 rules
+## The 12 rules
 
 | # | Rule | Where it lives in the harness |
 |---|------|------------------------------|
@@ -37,6 +50,8 @@ and writes its evidence to per-candidate state under `~/.omc/ghcontrib/`.
 | 8 | **Plan the follow-up in the pipeline.** | Phase 11 — T+24h / T+72h / T+7d schedule. |
 | 9 | **Throttle on calendar time, not just per-item quality.** | Phase 8 — append-only ledger, ≤5 PRs/7d/identity. |
 | 10 | **Let the agent branch at decision points.** | Recorded in `state.json.decisions[]` with rationale. |
+| 11 | **Demonstrate system understanding.** Plausible code is not a credibility signal. | Phase 2 — `understanding.md` proves subsystem comprehension. |
+| 12 | **Make design decisions reviewable, not just the diff.** | Phase 7 — "Design context" section in the PR body. |
 
 ## Pipeline
 
@@ -110,6 +125,15 @@ exec, path traversal, SSRF, TLS — or if the diff would *itself* reveal a
 vulnerability — the harness redirects to `~/.omc/ghcontrib/security-queue/`
 and surfaces the project's `SECURITY.md` disclosure channel. It does not
 push.
+
+## Attribution
+
+Rules 11–12 and the credibility principle were informed by Roger Wang's talk
+"Rethinking Open Source Contribution in the Age of AI Agents" at MLSys 2026.
+Roger is a core maintainer of [vLLM](https://github.com/vllm-project/vllm)
+and co-founder of Inferact. The talk drew on direct experience maintaining
+AI infrastructure as agent-generated PRs became a significant share of
+contributor activity.
 
 ## License
 
